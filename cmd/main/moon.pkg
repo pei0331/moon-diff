@@ -1,0 +1,7 @@
+// import {
+//   "peiyuran/moonbit_diff" @lib,
+// }
+
+options(
+  "is-main": true,
+)
