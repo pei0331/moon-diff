@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "peiyuran/moonbit_diff"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn diff(String, String) -> Array[EditOp]
+
+// Errors
+
+// Types and methods
+pub(all) enum EditOp {
+  Equal(String)
+  Delete(String)
+  Insert(String)
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+
