@@ -165,3 +165,25 @@ test "should delete bytes in the middle" {
     msg="should keep the suffix byte",
   )
 }
+
+///|
+test "should return empty script for two empty strings" {
+  let edit_script = @moonbit_diff.diff("", "")
+  assert_true(
+    edit_script.length() == 0,
+    msg="should return no edits when both inputs are empty",
+  )
+}
+
+///|
+test "should keep an identical single byte" {
+  let edit_script = @moonbit_diff.diff("x", "x")
+  assert_true(
+    edit_script.length() == 1,
+    msg="should keep the matching single byte",
+  )
+  assert_true(
+    edit_script[0] is @moonbit_diff.Equal("x"),
+    msg="should emit one equal operation",
+  )
+}

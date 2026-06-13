@@ -60,6 +60,15 @@ fn traceback_script(
 ) -> Array[EditOp] {
   let old_len = old_text.length()
   let new_len = new_text.length()
+  if old_len == 0 {
+    return insert_only_script(new_text)
+  }
+  if new_len == 0 {
+    return delete_only_script(old_text)
+  }
+  if old_len == 1 && new_len == 1 {
+    return single_pair_script(old_text, new_text)
+  }
   let matrix_width = new_len + 1
   let lcs_score = Array::make((old_len + 1) * matrix_width, 0)
   for old_back = 0; old_back < old_len; old_back = old_back + 1 {
@@ -130,6 +139,40 @@ fn traceback_script(
   while new_pos < new_len {
     edit_script.push(Insert(slice_at(new_text, new_pos)))
     new_pos = new_pos + 1
+  }
+  edit_script
+}
+
+///|
+fn insert_only_script(new_text : String) -> Array[EditOp] {
+  let new_len = new_text.length()
+  let edit_script = Array::new(capacity=new_len)
+  for new_pos = 0; new_pos < new_len; new_pos = new_pos + 1 {
+    edit_script.push(Insert(slice_at(new_text, new_pos)))
+  }
+  edit_script
+}
+
+///|
+fn delete_only_script(old_text : String) -> Array[EditOp] {
+  let old_len = old_text.length()
+  let edit_script = Array::new(capacity=old_len)
+  for old_pos = 0; old_pos < old_len; old_pos = old_pos + 1 {
+    edit_script.push(Delete(slice_at(old_text, old_pos)))
+  }
+  edit_script
+}
+
+///|
+fn single_pair_script(old_text : String, new_text : String) -> Array[EditOp] {
+  let old_slice = slice_at(old_text, 0)
+  let new_slice = slice_at(new_text, 0)
+  let edit_script = Array::new(capacity=2)
+  if old_slice == new_slice {
+    edit_script.push(Equal(old_slice))
+  } else {
+    edit_script.push(Delete(old_slice))
+    edit_script.push(Insert(new_slice))
   }
   edit_script
 }
