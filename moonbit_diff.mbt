@@ -8,7 +8,7 @@ pub(all) enum EditOp {
 ///|
 pub fn diff(old_text : String, new_text : String) -> Array[EditOp] {
   let edit_distance = myers_distance(old_text, new_text)
-  same_width_script(old_text, new_text, edit_distance)
+  traceback_script(old_text, new_text, edit_distance)
 }
 
 ///|
@@ -53,32 +53,90 @@ fn myers_distance(old_text : String, new_text : String) -> Int {
 }
 
 ///|
-fn same_width_script(
+fn traceback_script(
   old_text : String,
   new_text : String,
   edit_distance : Int,
 ) -> Array[EditOp] {
   let old_len = old_text.length()
   let new_len = new_text.length()
-  let shared_len = if old_len < new_len { old_len } else { new_len }
-  let edit_script = Array::new(capacity=edit_distance + shared_len)
-  for offset = 0; offset < shared_len; offset = offset + 1 {
-    let old_slice = slice_at(old_text, offset)
-    let new_slice = slice_at(new_text, offset)
-    if old_slice == new_slice {
-      edit_script.push(Equal(old_slice))
-    } else {
-      edit_script.push(Delete(old_slice))
-      edit_script.push(Insert(new_slice))
+  let matrix_width = new_len + 1
+  let lcs_score = Array::make((old_len + 1) * matrix_width, 0)
+  for old_back = 0; old_back < old_len; old_back = old_back + 1 {
+    let old_pos = old_len - old_back - 1
+    for new_back = 0; new_back < new_len; new_back = new_back + 1 {
+      let new_pos = new_len - new_back - 1
+      let score_pos = score_index(old_pos, new_pos, matrix_width)
+      if slice_at(old_text, old_pos) == slice_at(new_text, new_pos) {
+        lcs_score[score_pos] = lcs_score[score_index(
+            old_pos + 1,
+            new_pos + 1,
+            matrix_width,
+          )] +
+          1
+      } else {
+        let delete_score = lcs_score[score_index(
+            old_pos + 1,
+            new_pos,
+            matrix_width,
+          )]
+        let insert_score = lcs_score[score_index(
+            old_pos,
+            new_pos + 1,
+            matrix_width,
+          )]
+        lcs_score[score_pos] = if delete_score >= insert_score {
+          delete_score
+        } else {
+          insert_score
+        }
+      }
     }
   }
-  for offset = shared_len; offset < old_len; offset = offset + 1 {
-    edit_script.push(Delete(slice_at(old_text, offset)))
+  let edit_script = Array::new(capacity=edit_distance + lcs_score[0])
+  let mut old_pos = 0
+  let mut new_pos = 0
+  while old_pos < old_len && new_pos < new_len {
+    let old_slice = slice_at(old_text, old_pos)
+    let new_slice = slice_at(new_text, new_pos)
+    if old_slice == new_slice {
+      edit_script.push(Equal(old_slice))
+      old_pos = old_pos + 1
+      new_pos = new_pos + 1
+    } else {
+      let delete_score = lcs_score[score_index(
+          old_pos + 1,
+          new_pos,
+          matrix_width,
+        )]
+      let insert_score = lcs_score[score_index(
+          old_pos,
+          new_pos + 1,
+          matrix_width,
+        )]
+      if delete_score >= insert_score {
+        edit_script.push(Delete(old_slice))
+        old_pos = old_pos + 1
+      } else {
+        edit_script.push(Insert(new_slice))
+        new_pos = new_pos + 1
+      }
+    }
   }
-  for offset = shared_len; offset < new_len; offset = offset + 1 {
-    edit_script.push(Insert(slice_at(new_text, offset)))
+  while old_pos < old_len {
+    edit_script.push(Delete(slice_at(old_text, old_pos)))
+    old_pos = old_pos + 1
+  }
+  while new_pos < new_len {
+    edit_script.push(Insert(slice_at(new_text, new_pos)))
+    new_pos = new_pos + 1
   }
   edit_script
+}
+
+///|
+fn score_index(old_pos : Int, new_pos : Int, matrix_width : Int) -> Int {
+  old_pos * matrix_width + new_pos
 }
 
 ///|

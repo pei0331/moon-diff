@@ -123,3 +123,45 @@ test "should replace a single byte" {
     msg="should insert the new byte",
   )
 }
+
+///|
+test "should insert bytes in the middle" {
+  let edit_script = @moonbit_diff.diff("ac", "abc")
+  assert_true(
+    edit_script.length() == 3,
+    msg="should keep both sides around the inserted byte",
+  )
+  assert_true(
+    edit_script[0] is @moonbit_diff.Equal("a"),
+    msg="should keep the prefix byte",
+  )
+  assert_true(
+    edit_script[1] is @moonbit_diff.Insert("b"),
+    msg="should insert the middle byte",
+  )
+  assert_true(
+    edit_script[2] is @moonbit_diff.Equal("c"),
+    msg="should keep the suffix byte",
+  )
+}
+
+///|
+test "should delete bytes in the middle" {
+  let edit_script = @moonbit_diff.diff("abc", "ac")
+  assert_true(
+    edit_script.length() == 3,
+    msg="should keep both sides around the deleted byte",
+  )
+  assert_true(
+    edit_script[0] is @moonbit_diff.Equal("a"),
+    msg="should keep the prefix byte",
+  )
+  assert_true(
+    edit_script[1] is @moonbit_diff.Delete("b"),
+    msg="should delete the middle byte",
+  )
+  assert_true(
+    edit_script[2] is @moonbit_diff.Equal("c"),
+    msg="should keep the suffix byte",
+  )
+}
