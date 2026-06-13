@@ -52,8 +52,11 @@ fn same_width_script(
   new_text : String,
   edit_distance : Int,
 ) -> Array[EditOp] {
-  let edit_script = Array::new(capacity=edit_distance + old_text.length())
-  for offset = 0; offset < old_text.length(); offset = offset + 1 {
+  let old_len = old_text.length()
+  let new_len = new_text.length()
+  let shared_len = if old_len < new_len { old_len } else { new_len }
+  let edit_script = Array::new(capacity=edit_distance + shared_len)
+  for offset = 0; offset < shared_len; offset = offset + 1 {
     let old_slice = slice_at(old_text, offset)
     let new_slice = slice_at(new_text, offset)
     if old_slice == new_slice {
@@ -62,6 +65,12 @@ fn same_width_script(
       edit_script.push(Delete(old_slice))
       edit_script.push(Insert(new_slice))
     }
+  }
+  for offset = shared_len; offset < old_len; offset = offset + 1 {
+    edit_script.push(Delete(slice_at(old_text, offset)))
+  }
+  for offset = shared_len; offset < new_len; offset = offset + 1 {
+    edit_script.push(Insert(slice_at(new_text, offset)))
   }
   edit_script
 }
