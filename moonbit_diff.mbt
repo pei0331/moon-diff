@@ -126,7 +126,7 @@ fn traceback_script(
           new_pos + 1,
           matrix_width,
         )]
-      if delete_score >= insert_score {
+      if should_take_delete(delete_score, insert_score) {
         edit_script.push(Delete(old_slice))
         old_pos = old_pos + 1
       } else {
@@ -144,6 +144,11 @@ fn traceback_script(
     new_pos = new_pos + 1
   }
   edit_script
+}
+
+///|
+fn should_take_delete(delete_score : Int, insert_score : Int) -> Bool {
+  delete_score >= insert_score
 }
 
 ///|

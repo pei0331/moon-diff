@@ -402,3 +402,19 @@ test "dmp source handles line break delete" {
   )
   assert_diff_op(edit_script, 2, @moonbit_diff.Equal("b"), "should keep b")
 }
+
+///|
+test "should keep delete operations before inserts for multiline replacement" {
+  let edit_script = @moonbit_diff.diff("a\nold\nb", "a\nnew\nb")
+  assert_script_len(edit_script, 10, "should keep line boundaries stable")
+  assert_diff_op(edit_script, 0, @moonbit_diff.Equal("a"), "should keep prefix")
+  assert_diff_op(edit_script, 1, @moonbit_diff.Equal("\n"), "should keep break")
+  assert_diff_op(edit_script, 2, @moonbit_diff.Delete("o"), "should delete o")
+  assert_diff_op(edit_script, 3, @moonbit_diff.Delete("l"), "should delete l")
+  assert_diff_op(edit_script, 4, @moonbit_diff.Delete("d"), "should delete d")
+  assert_diff_op(edit_script, 5, @moonbit_diff.Insert("n"), "should insert n")
+  assert_diff_op(edit_script, 6, @moonbit_diff.Insert("e"), "should insert e")
+  assert_diff_op(edit_script, 7, @moonbit_diff.Insert("w"), "should insert w")
+  assert_diff_op(edit_script, 8, @moonbit_diff.Equal("\n"), "should keep break")
+  assert_diff_op(edit_script, 9, @moonbit_diff.Equal("b"), "should keep suffix")
+}
