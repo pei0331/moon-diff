@@ -60,6 +60,9 @@ fn traceback_script(
 ) -> Array[EditOp] {
   let old_len = old_text.length()
   let new_len = new_text.length()
+  if old_len == 0 && new_len == 0 {
+    return Array::new(capacity=0)
+  }
   if old_len == 0 {
     return insert_only_script(new_text)
   }
