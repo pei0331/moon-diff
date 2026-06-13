@@ -15,14 +15,20 @@ pub fn diff(old_text : String, new_text : String) -> Array[EditOp] {
 fn myers_distance(old_text : String, new_text : String) -> Int {
   let old_len = old_text.length()
   let new_len = new_text.length()
+  if old_len == 0 {
+    return new_len
+  }
+  if new_len == 0 {
+    return old_len
+  }
   let max_depth = old_len + new_len
-  let v_offset = max_depth
-  let v_frontier = Array::make(max_depth * 2 + 1, -1)
-  v_frontier[v_offset + 1] = 0
+  let diagonal_offset = max_depth + 1
+  let v_curr = Array::make(max_depth * 2 + 3, -1)
+  v_curr[diagonal_offset + 1] = 0
   for depth = 0; depth <= max_depth; depth = depth + 1 {
     for diagonal = -depth; diagonal <= depth; diagonal = diagonal + 2 {
-      let from_insert = v_frontier[v_offset + diagonal + 1]
-      let from_delete = v_frontier[v_offset + diagonal - 1] + 1
+      let from_insert = v_curr[diagonal_offset + diagonal + 1]
+      let from_delete = v_curr[diagonal_offset + diagonal - 1] + 1
       let x_start = if diagonal == -depth ||
         (diagonal != depth && from_insert > from_delete) {
         from_insert
@@ -37,7 +43,7 @@ fn myers_distance(old_text : String, new_text : String) -> Int {
         x_curr = x_curr + 1
         y_curr = y_curr + 1
       }
-      v_frontier[v_offset + diagonal] = x_curr
+      v_curr[diagonal_offset + diagonal] = x_curr
       if x_curr >= old_len && y_curr >= new_len {
         return depth
       }
