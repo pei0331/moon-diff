@@ -418,3 +418,34 @@ test "should keep delete operations before inserts for multiline replacement" {
   assert_diff_op(edit_script, 8, @moonbit_diff.Equal("\n"), "should keep break")
   assert_diff_op(edit_script, 9, @moonbit_diff.Equal("b"), "should keep suffix")
 }
+
+///|
+test "should strip common prefix and suffix around middle replacement" {
+  let edit_script = @moonbit_diff.diff("prefix-old-suffix", "prefix-new-suffix")
+  assert_script_len(edit_script, 20, "should keep shared edges unchanged")
+  assert_diff_op(edit_script, 0, @moonbit_diff.Equal("p"), "should keep prefix")
+  assert_diff_op(
+    edit_script,
+    6,
+    @moonbit_diff.Equal("-"),
+    "should keep divider",
+  )
+  assert_diff_op(edit_script, 7, @moonbit_diff.Delete("o"), "should delete o")
+  assert_diff_op(edit_script, 8, @moonbit_diff.Delete("l"), "should delete l")
+  assert_diff_op(edit_script, 9, @moonbit_diff.Delete("d"), "should delete d")
+  assert_diff_op(edit_script, 10, @moonbit_diff.Insert("n"), "should insert n")
+  assert_diff_op(edit_script, 11, @moonbit_diff.Insert("e"), "should insert e")
+  assert_diff_op(edit_script, 12, @moonbit_diff.Insert("w"), "should insert w")
+  assert_diff_op(
+    edit_script,
+    13,
+    @moonbit_diff.Equal("-"),
+    "should keep divider",
+  )
+  assert_diff_op(
+    edit_script,
+    19,
+    @moonbit_diff.Equal("x"),
+    "should keep suffix",
+  )
+}

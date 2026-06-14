@@ -7,8 +7,29 @@ pub(all) enum EditOp {
 
 ///|
 pub fn diff(old_text : String, new_text : String) -> Array[EditOp] {
-  let edit_distance = myers_distance(old_text, new_text)
-  traceback_script(old_text, new_text, edit_distance)
+  let old_len = old_text.length()
+  let new_len = new_text.length()
+  let prefix_len = common_prefix_len(old_text, new_text, old_len, new_len)
+  let suffix_len = common_suffix_len(
+    old_text, new_text, old_len, new_len, prefix_len,
+  )
+  let old_middle = old_text.unsafe_substring(
+    start=prefix_len,
+    end=old_len - suffix_len,
+  )
+  let new_middle = new_text.unsafe_substring(
+    start=prefix_len,
+    end=new_len - suffix_len,
+  )
+  let edit_distance = myers_distance(old_middle, new_middle)
+  let middle_script = traceback_script(old_middle, new_middle, edit_distance)
+  let edit_script = Array::new(
+    capacity=prefix_len + middle_script.length() + suffix_len,
+  )
+  push_equal_range(edit_script, old_text, 0, prefix_len)
+  push_script(edit_script, middle_script)
+  push_equal_range(edit_script, old_text, old_len - suffix_len, old_len)
+  edit_script
 }
 
 ///|
@@ -149,6 +170,62 @@ fn traceback_script(
 ///|
 fn should_take_delete(delete_score : Int, insert_score : Int) -> Bool {
   delete_score >= insert_score
+}
+
+///|
+fn common_prefix_len(
+  old_text : String,
+  new_text : String,
+  old_len : Int,
+  new_len : Int,
+) -> Int {
+  let max_len = if old_len < new_len { old_len } else { new_len }
+  let mut offset = 0
+  while offset < max_len &&
+        slice_at(old_text, offset) == slice_at(new_text, offset) {
+    offset = offset + 1
+  }
+  offset
+}
+
+///|
+fn common_suffix_len(
+  old_text : String,
+  new_text : String,
+  old_len : Int,
+  new_len : Int,
+  prefix_len : Int,
+) -> Int {
+  let max_len = if old_len < new_len { old_len } else { new_len }
+  let mut offset = 0
+  while offset < max_len - prefix_len &&
+        slice_at(old_text, old_len - offset - 1) ==
+        slice_at(new_text, new_len - offset - 1) {
+    offset = offset + 1
+  }
+  offset
+}
+
+///|
+fn push_equal_range(
+  edit_script : Array[EditOp],
+  text : String,
+  start : Int,
+  end : Int,
+) -> Unit {
+  for offset = start; offset < end; offset = offset + 1 {
+    edit_script.push(Equal(slice_at(text, offset)))
+  }
+}
+
+///|
+fn push_script(
+  edit_script : Array[EditOp],
+  other_script : Array[EditOp],
+) -> Unit {
+  for offset = 0; offset < other_script.length(); offset = offset + 1 {
+    edit_script.push(other_script[offset])
+  }
 }
 
 ///|
