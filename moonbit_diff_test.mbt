@@ -449,3 +449,15 @@ test "should strip common prefix and suffix around middle replacement" {
     "should keep suffix",
   )
 }
+
+///|
+test "should use short input path without changing edit order" {
+  let edit_script = @moonbit_diff.diff("abcd", "axyd")
+  assert_script_len(edit_script, 6, "should keep edges and replace middle run")
+  assert_diff_op(edit_script, 0, @moonbit_diff.Equal("a"), "should keep prefix")
+  assert_diff_op(edit_script, 1, @moonbit_diff.Delete("b"), "should delete b")
+  assert_diff_op(edit_script, 2, @moonbit_diff.Delete("c"), "should delete c")
+  assert_diff_op(edit_script, 3, @moonbit_diff.Insert("x"), "should insert x")
+  assert_diff_op(edit_script, 4, @moonbit_diff.Insert("y"), "should insert y")
+  assert_diff_op(edit_script, 5, @moonbit_diff.Equal("d"), "should keep suffix")
+}

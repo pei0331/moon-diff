@@ -21,8 +21,7 @@ pub fn diff(old_text : String, new_text : String) -> Array[EditOp] {
     start=prefix_len,
     end=new_len - suffix_len,
   )
-  let edit_distance = myers_distance(old_middle, new_middle)
-  let middle_script = traceback_script(old_middle, new_middle, edit_distance)
+  let middle_script = diff_middle(old_middle, new_middle)
   let edit_script = Array::new(
     capacity=prefix_len + middle_script.length() + suffix_len,
   )
@@ -30,6 +29,16 @@ pub fn diff(old_text : String, new_text : String) -> Array[EditOp] {
   push_script(edit_script, middle_script)
   push_equal_range(edit_script, old_text, old_len - suffix_len, old_len)
   edit_script
+}
+
+///|
+fn diff_middle(old_text : String, new_text : String) -> Array[EditOp] {
+  let total_len = old_text.length() + new_text.length()
+  if total_len < 32 {
+    return traceback_script(old_text, new_text, total_len)
+  }
+  let edit_distance = myers_distance(old_text, new_text)
+  traceback_script(old_text, new_text, edit_distance)
 }
 
 ///|
