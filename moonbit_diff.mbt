@@ -6,6 +6,10 @@ pub(all) enum EditOp {
 } derive(Eq, Debug)
 
 ///|
+/// Return a byte-oriented edit script that transforms `old_text` into `new_text`.
+///
+/// Shared prefixes and suffixes are preserved as `Equal` operations while the
+/// changed middle span is minimized with Myers/LCS-style ordering.
 pub fn diff(old_text : String, new_text : String) -> Array[EditOp] {
   let old_len = old_text.length()
   let new_len = new_text.length()
@@ -32,6 +36,10 @@ pub fn diff(old_text : String, new_text : String) -> Array[EditOp] {
 }
 
 ///|
+/// Render a unified diff string for line-oriented text changes.
+///
+/// Returns an empty string for equal input after CRLF, LF, and CR normalization.
+/// The output uses `--- old`, `+++ new`, and one hunk covering the full input.
 pub fn unified_diff(old_text : String, new_text : String) -> String {
   let old_source = normalize_line_endings(old_text)
   let new_source = normalize_line_endings(new_text)
