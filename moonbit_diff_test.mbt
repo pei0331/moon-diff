@@ -476,3 +476,18 @@ test "should render empty unified diff for identical input" {
   let patch = @moonbit_diff.unified_diff("same\ntext", "same\ntext")
   assert_true(patch == "", msg="should skip hunks when inputs are equal")
 }
+
+///|
+test "should normalize CRLF before unified diff" {
+  let patch = @moonbit_diff.unified_diff("one\r\ntwo\r\n", "one\n2\n")
+  assert_true(
+    patch == "--- old\n+++ new\n@@ -1,3 +1,3 @@\n one\n-two\n+2\n \n",
+    msg="should compare Windows and Unix line endings consistently",
+  )
+}
+
+///|
+test "should normalize lone carriage return before unified diff" {
+  let patch = @moonbit_diff.unified_diff("a\rb", "a\nb")
+  assert_true(patch == "", msg="should treat classic Mac breaks as line breaks")
+}

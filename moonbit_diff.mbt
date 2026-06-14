@@ -33,11 +33,13 @@ pub fn diff(old_text : String, new_text : String) -> Array[EditOp] {
 
 ///|
 pub fn unified_diff(old_text : String, new_text : String) -> String {
-  if old_text == new_text {
+  let old_source = normalize_line_endings(old_text)
+  let new_source = normalize_line_endings(new_text)
+  if old_source == new_source {
     return ""
   }
-  let old_lines = split_lines(old_text)
-  let new_lines = split_lines(new_text)
+  let old_lines = split_lines(old_source)
+  let new_lines = split_lines(new_source)
   let line_script = line_diff(old_lines, new_lines)
   render_unified_diff(line_script, old_lines.length(), new_lines.length())
 }
@@ -193,6 +195,27 @@ fn split_lines(text : String) -> Array[String] {
     return Array::new(capacity=0)
   }
   text.split("\n").map(line => line.to_owned()).to_array()
+}
+
+///|
+fn normalize_line_endings(text : String) -> String {
+  let output = StringBuilder()
+  let mut offset = 0
+  while offset < text.length() {
+    let current = slice_at(text, offset)
+    if current == "\r" {
+      output.write_string("\n")
+      if offset + 1 < text.length() && slice_at(text, offset + 1) == "\n" {
+        offset = offset + 2
+      } else {
+        offset = offset + 1
+      }
+    } else {
+      output.write_string(current)
+      offset = offset + 1
+    }
+  }
+  output.to_string()
 }
 
 ///|
