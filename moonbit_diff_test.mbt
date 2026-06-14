@@ -461,3 +461,18 @@ test "should use short input path without changing edit order" {
   assert_diff_op(edit_script, 4, @moonbit_diff.Insert("y"), "should insert y")
   assert_diff_op(edit_script, 5, @moonbit_diff.Equal("d"), "should keep suffix")
 }
+
+///|
+test "should render unified diff for changed line" {
+  let patch = @moonbit_diff.unified_diff("one\ntwo\nthree", "one\n2\nthree")
+  assert_true(
+    patch == "--- old\n+++ new\n@@ -1,3 +1,3 @@\n one\n-two\n+2\n three\n",
+    msg="should render changed line with unified markers",
+  )
+}
+
+///|
+test "should render empty unified diff for identical input" {
+  let patch = @moonbit_diff.unified_diff("same\ntext", "same\ntext")
+  assert_true(patch == "", msg="should skip hunks when inputs are equal")
+}

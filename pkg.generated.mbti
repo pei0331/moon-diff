@@ -8,6 +8,8 @@ import {
 // Values
 pub fn diff(String, String) -> Array[EditOp]
 
+pub fn unified_diff(String, String) -> String
+
 // Errors
 
 // Types and methods

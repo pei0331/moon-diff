@@ -32,6 +32,17 @@ pub fn diff(old_text : String, new_text : String) -> Array[EditOp] {
 }
 
 ///|
+pub fn unified_diff(old_text : String, new_text : String) -> String {
+  if old_text == new_text {
+    return ""
+  }
+  let old_lines = split_lines(old_text)
+  let new_lines = split_lines(new_text)
+  let line_script = line_diff(old_lines, new_lines)
+  render_unified_diff(line_script, old_lines.length(), new_lines.length())
+}
+
+///|
 fn diff_middle(old_text : String, new_text : String) -> Array[EditOp] {
   let total_len = old_text.length() + new_text.length()
   if total_len < 32 {
@@ -174,6 +185,139 @@ fn traceback_script(
     new_pos = new_pos + 1
   }
   edit_script
+}
+
+///|
+fn split_lines(text : String) -> Array[String] {
+  if text.length() == 0 {
+    return Array::new(capacity=0)
+  }
+  text.split("\n").map(line => line.to_owned()).to_array()
+}
+
+///|
+fn line_diff(
+  old_lines : Array[String],
+  new_lines : Array[String],
+) -> Array[EditOp] {
+  let old_len = old_lines.length()
+  let new_len = new_lines.length()
+  if old_len == 0 {
+    return insert_lines(new_lines)
+  }
+  if new_len == 0 {
+    return delete_lines(old_lines)
+  }
+  let matrix_width = new_len + 1
+  let lcs_score = Array::make((old_len + 1) * matrix_width, 0)
+  for old_back = 0; old_back < old_len; old_back = old_back + 1 {
+    let old_pos = old_len - old_back - 1
+    for new_back = 0; new_back < new_len; new_back = new_back + 1 {
+      let new_pos = new_len - new_back - 1
+      let score_pos = score_index(old_pos, new_pos, matrix_width)
+      if old_lines[old_pos] == new_lines[new_pos] {
+        lcs_score[score_pos] = lcs_score[score_index(
+            old_pos + 1,
+            new_pos + 1,
+            matrix_width,
+          )] +
+          1
+      } else {
+        let delete_score = lcs_score[score_index(
+            old_pos + 1,
+            new_pos,
+            matrix_width,
+          )]
+        let insert_score = lcs_score[score_index(
+            old_pos,
+            new_pos + 1,
+            matrix_width,
+          )]
+        lcs_score[score_pos] = if delete_score >= insert_score {
+          delete_score
+        } else {
+          insert_score
+        }
+      }
+    }
+  }
+  let line_script = Array::new(capacity=old_len + new_len)
+  let mut old_pos = 0
+  let mut new_pos = 0
+  while old_pos < old_len && new_pos < new_len {
+    let old_line = old_lines[old_pos]
+    let new_line = new_lines[new_pos]
+    if old_line == new_line {
+      line_script.push(Equal(old_line))
+      old_pos = old_pos + 1
+      new_pos = new_pos + 1
+    } else {
+      let delete_score = lcs_score[score_index(
+          old_pos + 1,
+          new_pos,
+          matrix_width,
+        )]
+      let insert_score = lcs_score[score_index(
+          old_pos,
+          new_pos + 1,
+          matrix_width,
+        )]
+      if should_take_delete(delete_score, insert_score) {
+        line_script.push(Delete(old_line))
+        old_pos = old_pos + 1
+      } else {
+        line_script.push(Insert(new_line))
+        new_pos = new_pos + 1
+      }
+    }
+  }
+  while old_pos < old_len {
+    line_script.push(Delete(old_lines[old_pos]))
+    old_pos = old_pos + 1
+  }
+  while new_pos < new_len {
+    line_script.push(Insert(new_lines[new_pos]))
+    new_pos = new_pos + 1
+  }
+  line_script
+}
+
+///|
+fn insert_lines(new_lines : Array[String]) -> Array[EditOp] {
+  let line_script = Array::new(capacity=new_lines.length())
+  for new_pos = 0; new_pos < new_lines.length(); new_pos = new_pos + 1 {
+    line_script.push(Insert(new_lines[new_pos]))
+  }
+  line_script
+}
+
+///|
+fn delete_lines(old_lines : Array[String]) -> Array[EditOp] {
+  let line_script = Array::new(capacity=old_lines.length())
+  for old_pos = 0; old_pos < old_lines.length(); old_pos = old_pos + 1 {
+    line_script.push(Delete(old_lines[old_pos]))
+  }
+  line_script
+}
+
+///|
+fn render_unified_diff(
+  line_script : Array[EditOp],
+  old_len : Int,
+  new_len : Int,
+) -> String {
+  let output = StringBuilder()
+  output.write_string("--- old\n")
+  output.write_string("+++ new\n")
+  output.write_string("@@ -1,\{old_len} +1,\{new_len} @@\n")
+  for offset = 0; offset < line_script.length(); offset = offset + 1 {
+    match line_script[offset] {
+      Equal(line) => output.write_string(" \{line}\n")
+      Delete(line) => output.write_string("-\{line}\n")
+      Insert(line) => output.write_string("+\{line}\n")
+    }
+  }
+  output.to_string()
 }
 
 ///|
